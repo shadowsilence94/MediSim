@@ -1,0 +1,23 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow users to read/write their own records in history
+    match /users/{userId}/history/{document=**} {
+      allow read, write: if request.auth != null && request.auth.token.email == userId;
+    }
+    
+    // User profile and API keys
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.token.email == userId;
+      // Admin can read all users to approve requests
+      allow read, update: if request.auth != null && request.auth.token.email == 'htutkoko1994@gmail.com';
+    }
+    
+    // Config/App Secrets - Admin only
+    match /config/app_secrets {
+      allow read: if false; // Only accessible via Admin SDK on backend
+      allow write: if request.auth != null && request.auth.token.email == 'htutkoko1994@gmail.com';
+    }
+  }
+}
