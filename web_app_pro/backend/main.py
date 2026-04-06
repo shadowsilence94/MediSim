@@ -1467,8 +1467,8 @@ async def triage(
             raise HTTPException(status_code=403, detail=missing_key_message)
             
         normalized_stage = str(stage).strip().lower()
-        if normalized_stage not in {'intake', 'specialist', 'final_nurse', 'fact_checker'}:
-            raise HTTPException(status_code=400, detail="stage must be 'intake', 'specialist', 'final_nurse', or 'fact_checker'.")
+        if normalized_stage not in {'intake', 'specialist', 'final_nurse', 'fact_checker', 'single_agent'}:
+            raise HTTPException(status_code=400, detail="stage must be 'intake', 'specialist', 'final_nurse', 'fact_checker', or 'single_agent'.")
 
         rag_context = build_rag_context(db, user_email, message)
         
@@ -1479,8 +1479,8 @@ async def triage(
             if not case_doc.exists:
                 raise HTTPException(status_code=404, detail="Case not found.")
         else:
-            if normalized_stage != 'intake':
-                raise HTTPException(status_code=400, detail="Initial stage must be 'intake'.")
+            if normalized_stage not in {'intake', 'single_agent'}:
+                raise HTTPException(status_code=400, detail="Initial stage must be 'intake' or 'single_agent'.")
             
             _, case_ref = db.collection('triage_sessions').add({
                 'user_email': user_email,
