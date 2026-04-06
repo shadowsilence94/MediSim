@@ -264,10 +264,27 @@ class MediSimAgentSystem:
         if content:
             yield content
 
+    def _get_single_agent_prompt(self, user_query, rag_context, thread_history=None):
+        display_name = rag_context.get("emr_profile", {}).get("display_name", "Patient")
+        history_str = _compact_thread(thread_history or [])
+        memory_block = _longitudinal_memory(rag_context)
+        return ChatPromptTemplate.from_messages([
+            SystemMessage(content=(
+                f"You are a standalone general AI Medical Chatbot talking to {display_name}. "
+                "Answer the user's medical questions and suggest treatments directly based on their symptoms. "
+                "Try to be helpful and provide comprehensive diagnostic thoughts in one message."
+            )),
+            HumanMessage(content=(
+                f"Memory: {memory_block}\n\n"
+                f"History:\n{history_str}\n\n"
+                f"User message: {user_query}"
+            )),
+        ])
+
     def run_stage(self, stage: str, user_query: str, rag_context: dict, thread_memory: dict, stream: bool = False):
         """
         Runs a specific stage of the 4-step process.
-        Stages: 'intake', 'specialist', 'final_nurse', 'fact_checker'
+        Stages: 'intake', 'specialist', 'final_nurse', 'fact_checker', 'single_agent'
         """
         if stage == 'intake':
             prompt = self._get_nurse_intake_prompt(user_query, rag_context, thread_memory.get('intake', []))
@@ -283,6 +300,8 @@ class MediSimAgentSystem:
             specialist_advice = _last_assistant_message(thread_memory.get('specialist', []))
             final_nurse_note = _last_assistant_message(thread_memory.get('final_nurse', []))
             prompt = self._get_fact_checker_prompt(nurse_report, specialist_advice, final_nurse_note, rag_context)
+        elif stage == 'single_agent':
+            prompt = self._get_single_agent_prompt(user_query, rag_context, thread_memory.get('single_agent', []))
         else:
             raise ValueError(f"Unknown stage: {stage}")
 

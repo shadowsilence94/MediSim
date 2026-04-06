@@ -1503,7 +1503,7 @@ async def triage(
 
         # Load Thread Memory from care_case_messages
         msg_docs = db.collection('care_case_messages').where('case_id', '==', case_id).order_by('created_at').stream()
-        thread_memory = {'intake': [], 'specialist': [], 'final_nurse': [], 'fact_checker': []}
+        thread_memory = {'intake': [], 'specialist': [], 'final_nurse': [], 'fact_checker': [], 'single_agent': []}
         
         for doc in msg_docs:
             d = doc.to_dict()
@@ -1545,6 +1545,11 @@ async def triage(
                     update_data['final_nurse_response'] = full_response
                 elif normalized_stage == 'fact_checker':
                     update_data['verified_response'] = full_response
+                elif normalized_stage == 'single_agent':
+                    update_data['nurse_response'] = "Single Agent Response: " + full_response
+                    update_data['specialist_response'] = "Standalone Mode (Evaluated)"
+                    update_data['final_nurse_response'] = "Standalone Mode (Evaluated)"
+                    update_data['verified_response'] = "Standalone Mode (Evaluated)"
                 
                 if update_data:
                     # Retrieve the existing data to merge 'responses' specifically

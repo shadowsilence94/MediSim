@@ -23,12 +23,13 @@ Progress Report}
 
 \begin{document}
 \maketitle
+\thispagestyle{plain}
+\pagestyle{plain}
 
 \begin{abstract}
 Traditional digital healthcare systems struggle to process unstructured multimodal patient inputs and complex triage queries safely. We propose MediSim, a unified system featuring a Multimodal Diagnostic Assistant and a Multi-Agent Triage framework. By fusing CNN and pretrained Transformer architectures for images and text, and orchestrating role-based LLM agents for triage, we establish a self-verifying clinical pipeline. Our multimodal fusion model achieved a testing accuracy of 51.08\% and an F1-score of 46.82\% on the IU X-Ray dataset, providing a 5.04\% absolute accuracy improvement over the 46.04\% baseline ResNet model. The entire system is successfully deployed as a full-stack React and FastAPI web interface, establishing a functional, hallucination-resistant clinical pipeline.
 
 \paragraph{Keywords:} Multimodal AI, Agentic Triage, Medical Vision-Language, Clinical Safety.
-\paragraph{ACM Classification:} Applied computing $\rightarrow$ Health informatics, Computing methodologies $\rightarrow$ Multi-agent systems.
 \end{abstract}
 
 \section{Introduction}
@@ -144,18 +145,18 @@ Preprocessing for images will involve standard rescaling, normalization, and aug
 \subsection{Models and Experimental Design}
 The system bridges two primary models:
 \begin{enumerate}[label=\textbf{\arabic*.}]
-    \item \textbf{Vision-Language Fusion}: An ensemble approach where image features are extracted using an established CNN (e.g., ResNet or DenseNet), while symptom text is embedded through a pretrained Clinical BERT Transformer network. The dense feature layers of both networks will be concatenated and fed through a classification head.
-    \item \textbf{Multi-Agent Triage}: Utilizing accessible LLM APIs (e.g., Groq/Ollama), this component initializes three distinct agents using sophisticated system prompts: the Triage Nurse, the Specialist, and the Fact-Checker. 
+    \item \textbf{Vision-Language Fusion}: An ensemble approach where image features are extracted using an established CNN (e.g., ResNet18), while symptom text is embedded through a pretrained Clinical BERT Transformer network. The dense feature layers of both networks will be concatenated and fed through a classification head.
+    \item \textbf{Multi-Agent Triage}: Utilizing accessible LLM APIs (e.g., Gemini 2.5 Flash via LangChain), this component initializes three distinct agents using sophisticated system prompts: the Triage Nurse, the Specialist, and the Fact-Checker. 
 \end{enumerate}
 
 \subsection{Apparatus and Compute Environment}
-Experiments will be conducted on consumer-grade hardware equipped with an Apple M-series silicon or NVIDIA RTX-series GPU (min. 8GB VRAM) to ensure real-world viability. LLM interaction will be managed via high-throughput inference APIs to maintain latency below 2 seconds per turn, while local models (CNN/Transformer) will be deployed via PyTorch. The final interface will be implemented using the Streamlit framework for rapid cross-platform accessibility.
+Experiments will be conducted on consumer-grade hardware equipped with an Apple M-series silicon or NVIDIA RTX-series GPU (min. 8GB VRAM) to ensure real-world viability. LLM interaction will be managed via high-throughput inference APIs to maintain latency below 2 seconds per turn, while local models (CNN/Transformer) will be deployed via PyTorch. The final interface will be implemented as a modern React and Firebase web application for secure, rapid cross-platform accessibility.
 
 \subsection{Metrics}
 The independent variables (IV) will be the architectural design (Unimodal vs. Multimodal fusion, and Single-Agent vs. Multi-Agent). The dependent variables (DV) will be diagnostic classification accuracy/F1-score for the fusion model, and safety/hallucination discordance rates for the triage agents.
 
 \subsection{Training and Evaluation Protocol}
-The baseline fusion model will be trained on the IU X-Ray dataset, split into 80-10-10 sets for training, validation, and testing. Performance will be monitored via loss and validated across Precision, Recall, and Accuracy. For the Generative Agent framework, quantitative evaluation will occur via human-in-the-loop clinical coherence scoring or leveraging automated metrics to compare the generated triage response against standard safe operating protocols.
+The baseline fusion model will be trained on the IU X-Ray dataset, split into 70-15-15 sets for training, validation, and testing. Performance will be monitored via loss and validated across Precision, Recall, and Accuracy. For the Generative Agent framework, quantitative evaluation will occur via human-in-the-loop clinical coherence scoring or leveraging automated metrics to compare the generated triage response against standard safe operating protocols.
 
 \begin{table}[h]
 \centering
@@ -164,12 +165,11 @@ The baseline fusion model will be trained on the IU X-Ray dataset, split into 80
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Prec} & \textbf{Rec} & \textbf{F1} & \textbf{Safety} \\
 \midrule
-CNN (Image Baseline) & 46.04\% & 43.10\% & 46.04\% & 43.52\% & N/A \\
-Transformer (Text Baseline) & & & & & \\
-\textbf{MediSim Fusion (Proposed)} & 51.08\% & 44.85\% & 51.08\% & 46.82\% & Pass \\
+CNN (Image Baseline) & TBD & TBD & TBD & TBD & N/A \\
+\textbf{MediSim Fusion (Proposed)} & TBD & TBD & TBD & TBD & N/A \\
 \midrule
-Single-Agent (Triage Baseline) & & & & & \\
-\textbf{Multi-Agent (Proposed)} & & & & & \\
+Single-Agent (Triage Baseline) & - & - & - & - & Low \\
+\textbf{Multi-Agent (Proposed)} & - & - & - & - & High \\
 \bottomrule
 \end{tabular}
 }
@@ -179,7 +179,7 @@ Single-Agent (Triage Baseline) & & & & & \\
 
 \section{System Architecture}
 
-The MediSim system architecture integrates a dual-pipeline approach. The first component is the Multimodal Diagnostic Assistant, which processes patient image data and textual symptom descriptions through a fused CNN and biLSTM framework. The second component is the Multi-Agent Triage system, functioning as a conversational interface powered by large language models with role-specific prompts. This unified structure ensures seamless data flow from initial patient input to final verified clinical recommendations. Additionally, the web application supports user accounts (e.g., via Firebase) to retain secure chat history, enabling seamless continuation of diagnostic sessions.
+The MediSim system architecture integrates a dual-pipeline approach. The first component is the Multimodal Diagnostic Assistant, which processes patient image data and textual symptom descriptions through a fused CNN and biLSTM framework. The second component is the Multi-Agent Triage system, functioning as a conversational interface powered by large language models with role-specific prompts. This unified structure ensures seamless data flow from initial patient input to final verified clinical recommendations. Additionally, the web application supports user accounts (e.g., via Firebase) to securely manage individualized API keys and retain chat history, enabling seamless continuation of diagnostic sessions and independent verification of model results.
 
 \begin{table}[h]
 \centering
@@ -212,7 +212,7 @@ The project will be executed in four primary phases:
 \begin{itemize}
     \item \textbf{Phase 1}: Literature Review and Baseline identification (Completed).
     \item \textbf{Phase 2}: Progress Report and Architecture design (Current).
-    \item \textbf{Phase 3}: Implementation of the Streamlit web application, data processing scripts, and training the baseline diagnostic models.
+    \item \textbf{Phase 3}: Implementation of the React/Firebase web application, data processing scripts, and training the baseline diagnostic models.
     \item \textbf{Phase 4}: Deployment, final evaluation, and submission.
 \end{itemize}
 
@@ -222,7 +222,7 @@ The project will be executed in four primary phases:
 We anticipate that by bridging lightweight classical deep learning with modern Agentic LLM interactions, MediSim will provide accurate deterministic outputs without sacrificing dynamic patient communication. The integration of a specific Fact-Checker agent directly evaluates our core research question concerning the minimization of clinical hallucinations. If our hypothesis holds, the multi-agent system will reject unsafe responses generated by the Specialist agent, thereby maintaining high clinical coherence and directly mitigating the risks typically associated with unconstrained generative health applications. 
 
 \subsection{Summary of Progress and Obstacles}
-During Phase 1, our team successfully identified and synthesized relevant literature strictly from the ACL Anthology, identifying both our state-of-the-art inspirations and our established lightweight classification baselines. The core obstacle identified pertains to data integration: effectively matching the static image-text datasets required for the fusion model setup to the dynamic conversational structure inherently required for the multi-agent orchestration. Furthermore, maintaining execution feasibility strictly on local compute environments while juggling multiple LLM API calls may introduce latency issues, prompting our choice of rapid-inference APIs over purely local transformer hosting where necessary. Currently, all Phase 1 objectives are complete, and we are preparing to transition into code implementation and dashboard setup using Streamlit.
+During Phase 1, our team successfully identified and synthesized relevant literature strictly from the ACL Anthology, identifying both our state-of-the-art inspirations and our established lightweight classification baselines. The core obstacle identified pertains to data integration: effectively matching the static image-text datasets required for the fusion model setup to the dynamic conversational structure inherently required for the multi-agent orchestration. Furthermore, maintaining execution feasibility strictly on local compute environments while juggling multiple LLM API calls may introduce latency issues, prompting our choice of rapid-inference APIs over purely local transformer hosting where necessary. Currently, all Phase 1 objectives are complete, and we are preparing to transition into code implementation and dashboard setup using a React/Firebase ecosystem.
 
 \bibliography{references}
 

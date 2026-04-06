@@ -86,6 +86,7 @@ export default function TriageView() {
   ]);
   const [input, setInput] = useState("");
   const [currentStage, setCurrentStage] = useState<TriageStage>("intake");
+  const [agentMode, setAgentMode] = useState<"multi" | "single">("multi");
   const [coordinating, setCoordinating] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [keyStatus, setKeyStatus] = useState<KeyStatus | null>(null);
@@ -154,7 +155,7 @@ export default function TriageView() {
     const assistantPlaceholderMsg: Message = {
       role: "assistant",
       content: "",
-      agent: STAGE_LABELS[currentStage],
+      agent: agentMode === "single" ? "Standalone Bot" : STAGE_LABELS[currentStage],
       timestamp: new Date(),
     };
 
@@ -170,7 +171,7 @@ export default function TriageView() {
 
       const formData = new FormData();
       formData.append("message", textToSend);
-      formData.append("stage", currentStage);
+      formData.append("stage", agentMode === "single" ? "single_agent" : currentStage);
       if (latestCaseId) {
         formData.append("case_id", latestCaseId);
       }
@@ -302,6 +303,11 @@ export default function TriageView() {
                     Module 02
                 </span>
                 </div>
+                
+                <div className="flex bg-white/80 dark:bg-black/40 p-1 rounded-full shadow-sm ml-4">
+                  <button onClick={() => { setAgentMode("multi"); setCurrentStage("intake"); setMessages([{ role: "assistant", content: "Welcome to the Multi-Agent Triage Pipeline. Please describe your symptoms.", agent: "Intake Nurse", timestamp: new Date() }]); }} className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${agentMode === "multi" ? "bg-sage-600 text-white shadow-md" : "text-sage-500 hover:text-sage-700"}`}>Multi-Agent</button>
+                  <button onClick={() => { setAgentMode("single"); setCurrentStage("intake"); setMessages([{ role: "assistant", content: "Welcome to the Single-Agent Baseline Model. How can I help you?", agent: "Standalone Bot", timestamp: new Date() }]); }} className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${agentMode === "single" ? "bg-sage-600 text-white shadow-md" : "text-sage-500 hover:text-sage-700"}`}>Single-Agent</button>
+                </div>
                 {latestCaseId && (
                     <div className="px-3 py-1 rounded-full border border-sage-500/20 bg-sage-50 text-xs font-mono text-sage-600 dark:text-sage-400">
                         Session Thread ID: {latestCaseId.substring(0,8)}...
@@ -319,7 +325,7 @@ export default function TriageView() {
             {/* Stepper Wizard UI */}
             <div className="flex items-center justify-between w-full max-w-2xl mt-4 px-4 relative">
                 <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-sage-200 dark:bg-sage-800 -z-10 translate-y-[-50%]"></div>
-                {(["intake", "specialist", "final_nurse", "fact_checker", "completed"] as TriageStage[]).map((stage, idx) => {
+                {agentMode === "multi" && (["intake", "specialist", "final_nurse", "fact_checker", "completed"] as TriageStage[]).map((stage, idx) => {
                     const isActive = currentStage === stage;
                     const isPast = ["intake", "specialist", "final_nurse", "fact_checker", "completed"].indexOf(currentStage) > idx;
                     return (
@@ -439,6 +445,7 @@ export default function TriageView() {
                     disabled={currentStage === "fact_checker" || currentStage === "completed"}
                     className="flex-grow p-5 bg-white/50 dark:bg-black/20 border border-black/5 dark:border-white/10 rounded-2xl focus:ring-2 focus:ring-sage-500/20 focus:border-sage-500 outline-none transition-all text-sm font-light italic text-sage-900 dark:text-sage-100 placeholder:text-sage-500/50 disabled:opacity-50"
                     placeholder={
+                        agentMode === "single" ? "Chat with Standalone Baseline..." :
                         currentStage === "completed" ? "Session completed." :
                         currentStage === "fact_checker" ? "Fact Check is final." :
                         `Chat with ${STAGE_LABELS[currentStage]}...`
@@ -507,6 +514,7 @@ export default function TriageView() {
               <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-sage-400 border-b border-white/5 pb-2">
                 Active Cluster
               </h5>
+              {agentMode === "multi" ? (
               <div className="space-y-4">
                 <AgentNode name="Intake Nurse" status={currentStage === 'intake' ? 'Active' : currentStage !== 'completed' ? 'Wait' : 'Done'} isActive={currentStage === 'intake'} />
                 <AgentNode name="Specialist" status={currentStage === 'specialist' ? 'Active' : currentStage !== 'completed' && currentStage !== 'intake' ? 'Wait' : 'Done'} isActive={currentStage === 'specialist'} />
@@ -518,6 +526,11 @@ export default function TriageView() {
                   isActive={currentStage === 'fact_checker'}
                 />
               </div>
+              ) : (
+                <div className="space-y-4">
+                  <AgentNode name="Standalone Triage Baseline" status="Active" isActive={true} />
+                </div>
+              )}
             </div>
           </div>
 
