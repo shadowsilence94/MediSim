@@ -94,14 +94,16 @@ export default function DiagnosticView() {
         label: response.prediction.label,
         confidence: response.prediction.confidence,
         details: response.prediction.details,
-        plainTextResults:
-          response.prediction.plain_text_results &&
-          response.prediction.plain_text_results.length > 0
-            ? response.prediction.plain_text_results
-            : [
+        plainTextResults: (() => {
+            const ptr = response.prediction.plain_text_results;
+            if (Array.isArray(ptr) && ptr.length > 0) return ptr;
+            if (typeof ptr === 'string') return (ptr as string).split('\n').filter(Boolean);
+            if (response.prediction.details && Array.isArray(response.prediction.details)) return response.prediction.details;
+            return [
                 `Most likely finding: ${response.prediction.label}.`,
                 "Please review this result with a clinician for final confirmation.",
-              ],
+            ];
+        })(),
         recommendation:
           response.prediction.confidence >= 0.7
             ? "Recommended next step: discuss this result with your doctor and correlate with your current symptoms."
