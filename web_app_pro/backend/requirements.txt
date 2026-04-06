@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+python-multipart
+torch
+torchvision
+pillow
+pandas
+scikit-learn
+python-dotenv
+langchain
+langchain-google-genai
+langchain-openai
+firebase-admin

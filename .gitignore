@@ -1,0 +1,72 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+**/.venv/
+**/venv/
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+/lib/
+/lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+
+# React / Node
+node_modules/
+frontend/node_modules/
+web_app_pro/frontend/node_modules/
+.eslintcache
+.stylelintcache
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.dist/
+.output/
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+frontend/.env
+web_app_pro/frontend/.env
+backend/.env
+web_app_pro/backend/.env
+backend/keys/
+backend/keys/*.json
+web_app_pro/backend/keys/
+web_app_pro/backend/keys/*.json
+
+# Firebase
+.firebase/
+firebasedebug.log
+firestore-debug.log
+firebase-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project Specific
+data/images/
+data/*.pth
+!data/medisim_diagnostic_model.pth
+!data/vocab.pth
+!data/label_encoder.pth
+!data/baseline_cnn.pth
+# Note: Keep core weights but ignore raw huge image datasets if any.
