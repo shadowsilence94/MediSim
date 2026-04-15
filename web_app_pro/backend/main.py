@@ -1666,8 +1666,11 @@ class EvaluationPayload(BaseModel):
 @app.post("/evaluation")
 async def submit_evaluation(payload: EvaluationPayload, user: dict = Depends(verify_token)):
     db = firestore_client_or_503()
+    user_email = user.get('email')
+    
+    # 1. Save precise Phase 4 HCI Evaluation data
     db.collection('evaluations').add({
-        'user_email': user.get('email'),
+        'user_email': user_email,
         'expertise': payload.expertise,
         'q1_trust': payload.q1_trust,
         'q2_ux': payload.q2_ux,
@@ -1678,6 +1681,20 @@ async def submit_evaluation(payload: EvaluationPayload, user: dict = Depends(ver
         'q7_safety': payload.q7_safety,
         'feedback': payload.feedback,
         'created_at': datetime.now(timezone.utc)
+    })
+    
+    # 2. Seamlessly merge into the Global System Telemetry & Feedback flow in Care Ops
+    avg_rating = round((payload.q1_trust + payload.q2_ux + payload.q3_accuracy + payload.q4_empathy + payload.q5_specialist + payload.q6_latency + payload.q7_safety) / 7.0)
+    summary_comment = f"[Phase 4 Evaluation] Expertise: {payload.expertise} | Trust:{payload.q1_trust} UX:{payload.q2_ux} Acc:{payload.q3_accuracy} Emp:{payload.q4_empathy} Spec:{payload.q5_specialist} Lat:{payload.q6_latency} Safe:{payload.q7_safety} | Qualitative: {payload.feedback}"
+    
+    db.collection('feedback_records').add({
+        'user_email': user_email,
+        'source_type': 'phase4_evaluation',
+        'source_id': 'empirical_run',
+        'rating': avg_rating,
+        'condition': 'System-wide HCI',
+        'comment': summary_comment,
+        'created_at': datetime.now(timezone.utc),
     })
     
     # Wandb Logging
