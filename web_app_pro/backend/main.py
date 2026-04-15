@@ -449,9 +449,18 @@ def load_diagnostic_model():
         label_encoder = torch.load(label_encoder_path, weights_only=False)
         device = "cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
         
-        model = get_model(vocab_size=len(vocab), num_classes=len(label_encoder.classes_), device=device)
-        model.load_state_dict(torch.load(weights_path, map_location=device))
+        state_dict = torch.load(weights_path, map_location=device)
+        is_transformer = any(k.startswith('text_encoder') for k in state_dict.keys())
+        text_model_name = 'emilyalsentzer/Bio_ClinicalBERT' if is_transformer else None
+        
+        model = get_model(vocab_size=len(vocab), num_classes=len(label_encoder.classes_), device=device, text_model_name=text_model_name)
+        model.load_state_dict(state_dict)
         model.eval()
+        
+        tokenizer = None
+        if is_transformer:
+            from transformers import AutoTokenizer
+            tokenizer = AutoTokenizer.from_pretrained(text_model_name)
         
         transform = transforms.Compose([
             transforms.Resize((224, 224)),
@@ -464,7 +473,8 @@ def load_diagnostic_model():
             "vocab": vocab,
             "label_encoder": label_encoder,
             "device": device,
-            "transform": transform
+            "transform": transform,
+            "tokenizer": tokenizer
         }
         print(f"Model loaded successfully on {device}")
     else:
@@ -1381,17 +1391,26 @@ async def diagnose(
         img_tensor = model_data["transform"](img).unsqueeze(0).to(model_data["device"])
         
         # 2. Process Text
-        vocab = model_data["vocab"]
-        tokens, token_count, unknown_token_count, unknown_ratio = normalize_symptom_tokens(
-            symptoms,
-            vocab,
-            max_len=50,
-        )
-        text_tensor = torch.tensor([tokens], dtype=torch.long).to(model_data["device"])
+        tokenizer = model_data.get("tokenizer")
+        if tokenizer:
+            encoded = tokenizer(symptoms, padding='max_length', truncation=True, max_length=50, return_tensors='pt')
+            text_tensor = encoded['input_ids'].to(model_data["device"])
+            att_mask = encoded['attention_mask'].to(model_data["device"])
+            unknown_ratio = 0.0
+            token_count = len(symptoms.split())
+        else:
+            vocab = model_data["vocab"]
+            tokens, token_count, unknown_token_count, unknown_ratio = normalize_symptom_tokens(
+                symptoms,
+                vocab,
+                max_len=50,
+            )
+            text_tensor = torch.tensor([tokens], dtype=torch.long).to(model_data["device"])
+            att_mask = None
         
         # 3. Inference
         with torch.no_grad():
-            outputs = model_data["model"](img_tensor, text_tensor)
+            outputs = model_data["model"](img_tensor, text_tensor, att_mask)
             probs = torch.softmax(outputs, dim=1)
             confidence, pred_idx = torch.max(probs, dim=1)
 
