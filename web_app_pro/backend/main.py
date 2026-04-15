@@ -1025,6 +1025,13 @@ async def list_care_cases(limit: int = 100, user: dict = Depends(verify_token)):
         .limit(limit)
         .stream()
     )
+    
+    diag_docs = (
+        db.collection('diagnosis_records')
+        .order_by('created_at', direction=firestore.Query.DESCENDING)
+        .limit(limit)
+        .stream()
+    )
 
     cases = []
     for doc in triage_docs:
@@ -1037,9 +1044,38 @@ async def list_care_cases(limit: int = 100, user: dict = Depends(verify_token)):
                 'status': item.get('status', 'pending'),
                 'created_at': str(item.get('created_at', '')),
                 'responses': item.get('responses', {}),
+                'type': 'triage'
             }
         )
-    return {'status': 'success', 'cases': cases}
+        
+    for doc in diag_docs:
+        item = doc.to_dict()
+        pred = item.get('prediction', {})
+        label = pred.get('label', 'Unknown')
+        conf = round(pred.get('confidence', 0) * 100, 2)
+        symptoms = item.get('symptoms', '')
+        
+        message = f"Diagnostic Inference ({label} - {conf}%) | Symptoms: {symptoms}"
+        responses = {
+            'nurse': pred.get('details', 'No diagnostic details.'),
+            'specialist': "\n".join(pred.get('findings', [])),
+            'verified': pred.get('plain_text_results', 'No findings.')
+        }
+        
+        cases.append(
+            {
+                'id': doc.id,
+                'user_email': item.get('user_email', ''),
+                'message': message,
+                'status': item.get('status', 'settled'), # Implicitly settled since inference is deterministic
+                'created_at': str(item.get('created_at', '')),
+                'responses': responses,
+                'type': 'diagnostic'
+            }
+        )
+        
+    cases.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+    return {'status': 'success', 'cases': cases[:limit]}
 
 
 @app.get('/care/my-cases')
@@ -1105,7 +1141,9 @@ async def update_case_status(
 
     doc_ref = db.collection('triage_sessions').document(case_id)
     if not doc_ref.get().exists:
-        raise HTTPException(status_code=404, detail='Case not found.')
+        doc_ref = db.collection('diagnosis_records').document(case_id)
+        if not doc_ref.get().exists:
+            raise HTTPException(status_code=404, detail='Case not found.')
 
     doc_ref.update({'status': status})
     return {'status': 'success', 'message': f'Case status updated to {status}'}
@@ -1123,8 +1161,12 @@ async def delete_care_case(case_id: str, user: dict = Depends(verify_token)):
 
     case_ref = db.collection('triage_sessions').document(case_id)
     case_doc = case_ref.get()
+    
     if not case_doc.exists:
-        raise HTTPException(status_code=404, detail='Case not found.')
+        case_ref = db.collection('diagnosis_records').document(case_id)
+        case_doc = case_ref.get()
+        if not case_doc.exists:
+            raise HTTPException(status_code=404, detail='Case not found.')
 
     case_ref.delete()
 
