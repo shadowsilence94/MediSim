@@ -1,0 +1,30 @@
+# ============================================================
+# GitHub Actions: Auto-deploy to Hugging Face Spaces
+# Triggers on every push to `main` branch.
+# Syncs the full repo to HF Space (Docker SDK).
+#
+# Required GitHub Secrets:
+#   HF_TOKEN — Hugging Face access token (write permission)
+# ============================================================
+name: Deploy to Hugging Face Spaces
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-to-hf:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git push https://user:${HF_TOKEN}@huggingface.co/spaces/shadowsilence/medisim main --force

@@ -42,9 +42,12 @@ yarn-error.log*
 # Environment Variables
 .env
 .env.local
+.env.production
 .env.*.local
 frontend/.env
+frontend/.env.production
 web_app_pro/frontend/.env
+web_app_pro/frontend/.env.production
 backend/.env
 web_app_pro/backend/.env
 backend/keys/
@@ -60,7 +63,15 @@ firebase-debug.log*
 
 # OS
 .DS_Store
+**/.DS_Store
 Thumbs.db
+
+# Old deploy script
+deploy_hf.py
+
+# Frontend build output (built in Docker)
+web_app_pro/frontend/dist/
+frontend/dist/
 
 # Project Specific
 data/images/

@@ -1,6 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
+from contextlib import asynccontextmanager
 import uvicorn
 import torch
 import torch.nn as nn
@@ -46,9 +47,36 @@ def _get_allowed_origins() -> list[str]:
     raw = os.getenv("CORS_ALLOWED_ORIGINS", "")
     if raw.strip():
         return [origin.strip() for origin in raw.split(",") if origin.strip()]
-    return ["http://localhost:5173", "http://127.0.0.1:5173"]
+    return [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://shadowsilence-medisim.hf.space",
+    ]
 
-app = FastAPI(title="MediSim API")
+async def bootstrap_model_on_startup():
+    try:
+        eager = str(os.getenv("LOAD_MODEL_ON_STARTUP", "false")).strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }
+        if eager:
+            load_diagnostic_model()
+        else:
+            print("Model eager load disabled; model will load lazily on first /diagnose request.")
+    except Exception as exc:
+        # Keep API online even if model bootstrap fails in hosted environments.
+        print(f"WARNING: Model bootstrap failed during startup: {exc}")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await bootstrap_model_on_startup()
+    yield
+
+
+app = FastAPI(title="MediSim API", lifespan=lifespan)
 
 # Configure CORS for local development
 app.add_middleware(
@@ -398,7 +426,20 @@ def confidence_bucket(conf: float) -> str:
 
 def load_diagnostic_model():
     global model_data
-    base_data_path = os.path.abspath(os.path.join(BACKEND_DIR, "../../data"))
+    # Resolve data directory: env override → Docker path → local dev path
+    env_data_dir = os.getenv("MEDISIM_DATA_DIR", "").strip()
+    candidates = [
+        env_data_dir,
+        os.path.join(BACKEND_DIR, "data"),       # /app/data when BACKEND_DIR=/app
+        os.path.abspath(os.path.join(BACKEND_DIR, "../../data")),  # local dev
+    ]
+    base_data_path = None
+    for candidate in candidates:
+        if candidate and os.path.isdir(candidate):
+            base_data_path = candidate
+            break
+    if base_data_path is None:
+        base_data_path = os.path.abspath(os.path.join(BACKEND_DIR, "../../data"))
     weights_path = os.path.join(base_data_path, "medisim_diagnostic_model.pth")
     vocab_path = os.path.join(base_data_path, "vocab.pth")
     label_encoder_path = os.path.join(base_data_path, "label_encoder.pth")
@@ -428,24 +469,6 @@ def load_diagnostic_model():
         print(f"Model loaded successfully on {device}")
     else:
         print(f"ERROR: Model weights not found at {weights_path}")
-
-
-@app.on_event("startup")
-async def startup_event():
-    try:
-        eager = str(os.getenv("LOAD_MODEL_ON_STARTUP", "false")).strip().lower() in {
-            "1",
-            "true",
-            "yes",
-            "on",
-        }
-        if eager:
-            load_diagnostic_model()
-        else:
-            print("Model eager load disabled; model will load lazily on first /diagnose request.")
-    except Exception as exc:
-        # Keep API online even if model bootstrap fails in hosted environments.
-        print(f"WARNING: Model bootstrap failed during startup: {exc}")
 
 
 async def verify_token(authorization: str = Header(None)):
@@ -1597,3 +1620,9 @@ async def serve_frontend(full_path: str):
         return FileResponse(index_file, headers={"Cache-Control": "no-store, no-cache"})
 
     raise HTTPException(status_code=404, detail="Not found")
+
+
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", 8000))
+    print(f"Starting MediSim API server on http://0.0.0.0:{port}")
+    uvicorn.run(app, host="0.0.0.0", port=port)
