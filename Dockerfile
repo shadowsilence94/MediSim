@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.4
 # ============================================================
 # MediSim Docker Build — Hugging Face Spaces (Docker SDK)
 # Secrets are injected via HF Space Secrets, NOT baked into git.
@@ -14,28 +15,23 @@ RUN npm ci --include=dev
 # Copy source
 COPY web_app_pro/frontend/ ./
 
-# Firebase config is injected as build-time args (set via HF Secrets)
-ARG VITE_FIREBASE_PROJECT_ID
-ARG VITE_FIREBASE_APP_ID
-ARG VITE_FIREBASE_API_KEY
-ARG VITE_FIREBASE_AUTH_DOMAIN
-ARG VITE_FIREBASE_STORAGE_BUCKET
-ARG VITE_FIREBASE_MESSAGING_SENDER_ID
-ARG VITE_ADMIN_EMAIL
-# In HF Spaces Docker, frontend is served by same backend, so API is relative
-ARG VITE_API_BASE_URL=""
-
-# Vite reads VITE_* env vars at build time
-ENV VITE_FIREBASE_PROJECT_ID=$VITE_FIREBASE_PROJECT_ID
-ENV VITE_FIREBASE_APP_ID=$VITE_FIREBASE_APP_ID
-ENV VITE_FIREBASE_API_KEY=$VITE_FIREBASE_API_KEY
-ENV VITE_FIREBASE_AUTH_DOMAIN=$VITE_FIREBASE_AUTH_DOMAIN
-ENV VITE_FIREBASE_STORAGE_BUCKET=$VITE_FIREBASE_STORAGE_BUCKET
-ENV VITE_FIREBASE_MESSAGING_SENDER_ID=$VITE_FIREBASE_MESSAGING_SENDER_ID
-ENV VITE_ADMIN_EMAIL=$VITE_ADMIN_EMAIL
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
-
-RUN npm run build
+# Mount HF Secrets and export them before running build
+RUN --mount=type=secret,id=VITE_FIREBASE_PROJECT_ID \
+    --mount=type=secret,id=VITE_FIREBASE_APP_ID \
+    --mount=type=secret,id=VITE_FIREBASE_API_KEY \
+    --mount=type=secret,id=VITE_FIREBASE_AUTH_DOMAIN \
+    --mount=type=secret,id=VITE_FIREBASE_STORAGE_BUCKET \
+    --mount=type=secret,id=VITE_FIREBASE_MESSAGING_SENDER_ID \
+    --mount=type=secret,id=VITE_ADMIN_EMAIL \
+    export VITE_FIREBASE_PROJECT_ID=$(cat /run/secrets/VITE_FIREBASE_PROJECT_ID 2>/dev/null) && \
+    export VITE_FIREBASE_APP_ID=$(cat /run/secrets/VITE_FIREBASE_APP_ID 2>/dev/null) && \
+    export VITE_FIREBASE_API_KEY=$(cat /run/secrets/VITE_FIREBASE_API_KEY 2>/dev/null) && \
+    export VITE_FIREBASE_AUTH_DOMAIN=$(cat /run/secrets/VITE_FIREBASE_AUTH_DOMAIN 2>/dev/null) && \
+    export VITE_FIREBASE_STORAGE_BUCKET=$(cat /run/secrets/VITE_FIREBASE_STORAGE_BUCKET 2>/dev/null) && \
+    export VITE_FIREBASE_MESSAGING_SENDER_ID=$(cat /run/secrets/VITE_FIREBASE_MESSAGING_SENDER_ID 2>/dev/null) && \
+    export VITE_ADMIN_EMAIL=$(cat /run/secrets/VITE_ADMIN_EMAIL 2>/dev/null) && \
+    export VITE_API_BASE_URL="" && \
+    npm run build
 
 # ---- Stage 2: Python FastAPI + Built Frontend ----
 FROM python:3.10-slim
