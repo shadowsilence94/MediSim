@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { X, CheckCircle, FileSpreadsheet } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { apiClient } from "../lib/api"; // Ensure api client exists or fallback to fetch
 
 interface EvaluationModalProps {
   isOpen: boolean;
