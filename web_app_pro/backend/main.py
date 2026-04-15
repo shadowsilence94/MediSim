@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse, HTMLResponse
 from contextlib import asynccontextmanager
 import uvicorn
 import torch
@@ -483,15 +483,27 @@ async def verify_token(authorization: str = Header(None)):
         raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
 
 
+def serve_index_with_env(path: str):
+    with open(path, "r", encoding="utf-8") as f:
+        html = f.read()
+    env_keys = [
+        "VITE_FIREBASE_PROJECT_ID", "VITE_FIREBASE_APP_ID", "VITE_FIREBASE_API_KEY",
+        "VITE_FIREBASE_AUTH_DOMAIN", "VITE_FIREBASE_STORAGE_BUCKET",
+        "VITE_FIREBASE_MESSAGING_SENDER_ID", "VITE_ADMIN_EMAIL", "VITE_API_BASE_URL"
+    ]
+    env_dict = {k: os.getenv(k, "") for k in env_keys}
+    script = f"<script>window._ENV = {json.dumps(env_dict)};</script></head>"
+    return HTMLResponse(
+        content=html.replace("</head>", script),
+        headers={"Cache-Control": "no-store, no-cache, must-revalidate"}
+    )
+
 @app.get("/")
 async def root():
     static_dir = resolve_static_dir()
     index_file = os.path.join(static_dir, "index.html")
     if os.path.isfile(index_file):
-        return FileResponse(
-            index_file,
-            headers={"Cache-Control": "no-store, no-cache, must-revalidate"},
-        )
+        return serve_index_with_env(index_file)
     return {"status": "online", "model_loaded": model_data is not None}
 
 
@@ -1609,15 +1621,12 @@ async def serve_frontend(full_path: str):
     candidate = os.path.normpath(os.path.join(static_dir, full_path))
     if candidate.startswith(static_dir) and os.path.isfile(candidate):
         if candidate.endswith(".html"):
-            return FileResponse(
-                candidate,
-                headers={"Cache-Control": "no-store, no-cache, must-revalidate"},
-            )
+            return serve_index_with_env(candidate)
         return FileResponse(candidate)
 
     index_file = os.path.join(static_dir, "index.html")
     if os.path.isfile(index_file):
-        return FileResponse(index_file, headers={"Cache-Control": "no-store, no-cache"})
+        return serve_index_with_env(index_file)
 
     raise HTTPException(status_code=404, detail="Not found")
 

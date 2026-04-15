@@ -16,19 +16,17 @@ const normalizeDomain = (value: string) =>
     .replace(/^https?:\/\//i, "")
     .replace(/\/.*/, "");
 
+const getEnvVar = (key: string, metaFallback: string) => {
+  return String((window as any)._ENV?.[key] || metaFallback || "").trim();
+};
+
 const firebaseConfig = {
-  apiKey: String(import.meta.env.VITE_FIREBASE_API_KEY || "").trim(),
-  authDomain: normalizeDomain(
-    String(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || ""),
-  ),
-  projectId: String(import.meta.env.VITE_FIREBASE_PROJECT_ID || "").trim(),
-  storageBucket: String(
-    import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
-  ).trim(),
-  messagingSenderId: String(
-    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
-  ).trim(),
-  appId: String(import.meta.env.VITE_FIREBASE_APP_ID || "").trim(),
+  apiKey: getEnvVar("VITE_FIREBASE_API_KEY", import.meta.env.VITE_FIREBASE_API_KEY),
+  authDomain: normalizeDomain(getEnvVar("VITE_FIREBASE_AUTH_DOMAIN", import.meta.env.VITE_FIREBASE_AUTH_DOMAIN)),
+  projectId: getEnvVar("VITE_FIREBASE_PROJECT_ID", import.meta.env.VITE_FIREBASE_PROJECT_ID),
+  storageBucket: getEnvVar("VITE_FIREBASE_STORAGE_BUCKET", import.meta.env.VITE_FIREBASE_STORAGE_BUCKET),
+  messagingSenderId: getEnvVar("VITE_FIREBASE_MESSAGING_SENDER_ID", import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID),
+  appId: getEnvVar("VITE_FIREBASE_APP_ID", import.meta.env.VITE_FIREBASE_APP_ID),
 };
 
 const app = initializeApp(firebaseConfig);

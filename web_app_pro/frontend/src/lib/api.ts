@@ -1,6 +1,6 @@
 import { auth } from "./firebase";
 
-const RAW_API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || "").trim();
+const RAW_API_BASE_URL = String((window as any)._ENV?.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || "").trim();
 const API_BASE_URL = RAW_API_BASE_URL
   ? RAW_API_BASE_URL.replace(/\/+$/, "")
   : "";
