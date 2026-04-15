@@ -1,0 +1,116 @@
+\documentclass[aspectratio=169, 10pt]{beamer}
+\usetheme{Madrid}
+\usecolortheme{whale}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amssymb}
+\usepackage[utf8]{inputenc}
+
+% Settings
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{itemize items}[circle]
+
+\title[MediSim Iteration]{MediSim: Phase 3 Progress \& Delivery}
+\subtitle{Multimodal Diagnostics \& Agentic Triage}
+\author[Phase 3 Team]{Natural Language Processing Group Project}
+\institute[AIT]{Asian Institute of Technology}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+    \titlepage
+\end{frame}
+
+\begin{frame}{1. Background \& The Operational Gap}
+    \textbf{The Clinical Dilemma:}
+    \begin{itemize}
+        \item Global hospital systems face unprecedented patient routing congestion and limited triage staffing.
+        \item Legacy vision models process isolated radiology files (Unimodal) without interrogating the patient.
+        \item Generative LLMs converse extremely well but lack explicit, mathematically bounded medical context, actively leading to critical clinical hallucinations.
+    \end{itemize}
+    \vspace{0.5cm}
+    \textbf{The MediSim Objective:}
+    \begin{quote}
+        Can integrating a strictly deterministic Multimodal Vision-Language pipeline directly inside an LLM Multi-Agent conversational framework safely regulate diagnostic capabilities while preventing subjective hallucinations?
+    \end{quote}
+\end{frame}
+
+\begin{frame}{2. Independent \& Dependent Evaluation Variables}
+    \textbf{Experimental Protocol Design:}
+    We evaluate the framework utilizing a rigid \textit{Within-Subjects} HCI approach running against the verified IU X-Ray clinical dataset baseline ($N=2,771$ patient arrays). \\
+    \vspace{0.4cm}
+    \begin{columns}
+        \column{0.45\textwidth}
+        \textbf{Independent Variables (IV):}
+        \begin{itemize}
+            \item \textbf{A:} Traditional Unimodal Baseline (ResNet-18 only)
+            \item \textbf{B:} Full Multimodal Fusion (ResNet-18 + Bio\_ClinicalBERT)
+        \end{itemize}
+        
+        \column{0.45\textwidth}
+        \textbf{Dependent Variables (DV):}
+        \begin{itemize}
+            \item Macro F1-Score (Addressing clinical class imbalances).
+            \item Frequency of hallucinated contraindications during Triage testing.
+        \end{itemize}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{3. Deterministic Pipeline: The Multimodal Nexus}
+    \textbf{Architecture Breakdown:}
+    \begin{itemize}
+        \item \textbf{Visual Mapping:} ResNet-18 CNN drops chest X-rays onto a $D_V=128$ dimensional plane.
+        \item \textbf{Subjective Tokenization:} Migrated away from deprecated biLSTM structures toward the \textbf{Bio\_ClinicalBERT Hugging Face Transformer}. It forces subjective patient symptoms through massive $D=768$ dimension contextual mapping before dimension-reducing to $D_T=128$.
+        \item \textbf{Softmax Fusion:} The physical visual signals and the conceptual textual signals merge into unified probability tensors mapped to 15 pulmonary pathology classifiers.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{4. Interactive Pipeline: Multi-Agent Clinical Triage}
+    Rather than unleashing a single unified LLM, we implemented a partitioned generative orchestration using LangChain bridging API calls to Gemini 2.5 Flash.
+    \vspace{0.3cm}
+    \begin{enumerate}
+        \item \textbf{The Triage Nurse:} A high-empathy listener deployed exclusively for compassionate data intake and psychological de-escalation prior to analysis.
+        \item \textbf{The Specialist Doctor:} A strict, rigid analytical mind ingesting the deterministic pipeline probabilities and producing targeted diagnosis theories.
+        \item \textbf{The RAG Fact-Checker:} Operates completely behind the scenes querying Google Firestore structures to explicitly verify no proposed treatments violate user-recorded chronic contraindications!
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}{5. Empirical Results \& Testing Capabilities}
+    \textbf{Multimodal Performance Verification:}
+    \begin{table}[]
+        \centering
+        \begin{tabular}{r c c}
+            \toprule
+            \textbf{Pipeline Configuration} & \textbf{Top-1 Accuracy} & \textbf{Macro F1-Score} \\
+            \midrule
+            Baseline Unimodal (ResNet-18) & 46.04\% & 41.25\% \\
+            \textbf{Multimodal Fusion Framework} & \textbf{51.08\%} & \textbf{46.82\%} \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+    \vspace{0.3cm}
+    \textit{Insight:} We achieved a verified +5.04\% qualitative leap mathematically by coupling symptom semantics exclusively to the Chest X-Ray matrices. 
+\end{frame}
+
+\begin{frame}{6. Hallucination Interception}
+    \textbf{System Security Outcomes:}
+    During iterative conversational testing, the introduction of the independent \textit{Fact-Checker} agent yielded a $\sim 0\%$ unflagged hallucination rate against contraindications. 
+    \begin{itemize}
+        \item If a user presents severe asthma in their Firestore EMR matrix and the generative Specialist suggests a detrimental prescription interactively... 
+        \item The Fact-Checker strictly intersects the workflow network and aggressively fires an emergency Fallback screen across the React dashboard automatically warning the patient!
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{7. Phase 4 Target Trajectory}
+    \textbf{Next Logical Steps:}
+    \begin{itemize}
+        \item \textbf{Clinical User Trials:} Employing formal HCI Evaluation methodologies capturing empirical UI trust utilizing explicit SUS indexing structures against Multimodal vs. Unimodal platforms.
+        \item \textbf{System Logging Tracker:} Incorporating continuous Weights \& Biases (\texttt{WandB}) structures to physically track network mapping telemetry natively across iteration pipelines.
+    \end{itemize}
+    \vspace{0.5cm}
+    \centering \textbf{Thank You.} \\
+    \textit{Preparing for Live Application Demonstration...}
+\end{frame}
+
+\end{document}
