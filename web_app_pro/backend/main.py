@@ -12,6 +12,7 @@ import os
 import sys
 import json
 import re
+import csv
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 import firebase_admin
@@ -65,6 +66,15 @@ async def bootstrap_model_on_startup():
             load_diagnostic_model()
         else:
             print("Model eager load disabled; model will load lazily on first /diagnose request.")
+            
+        try:
+            if os.getenv("WANDB_API_KEY"):
+                import wandb
+                wandb.init(project="medisim-triage-tracker", entity=os.getenv("WANDB_ENTITY", None))
+                print("WandB System Logging Tracker Initialized")
+        except Exception as we:
+            print(f"WARNING: WandB integration failed: {we}")
+            
     except Exception as exc:
         # Keep API online even if model bootstrap fails in hosted environments.
         print(f"WARNING: Model bootstrap failed during startup: {exc}")
@@ -1573,11 +1583,17 @@ async def triage(
         async def combined_stream():
             try:
                 full_response = ""
+                start_time = datetime.now()
                 for chunk in stream_gen:
                     full_response += chunk
                     payload = {'chunk': chunk, 'case_id': case_id, 'stage': normalized_stage}
                     yield f"data: {json.dumps(payload)}\n\n"
                 
+                # Wandb Telemetry
+                if 'wandb' in sys.modules and getattr(wandb, 'run', None) is not None:
+                    latency = (datetime.now() - start_time).total_seconds()
+                    wandb.log({"agent_latency": latency, "agent_stage": normalized_stage, "interaction_length": len(full_response)})
+                    
                 # Save the agent's response to the thread after completion
                 if full_response.strip():
                     db.collection('care_case_messages').add({
@@ -1634,6 +1650,75 @@ async def triage(
         raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class EvaluationPayload(BaseModel):
+    expertise: str
+    q1_trust: int
+    q2_ux: int
+    q3_accuracy: int
+    q4_empathy: int
+    q5_specialist: int
+    q6_latency: int
+    q7_safety: int
+    feedback: str = ""
+
+@app.post("/evaluation")
+async def submit_evaluation(payload: EvaluationPayload, user: dict = Depends(verify_token)):
+    db = firestore_client_or_503()
+    db.collection('evaluations').add({
+        'user_email': user.get('email'),
+        'expertise': payload.expertise,
+        'q1_trust': payload.q1_trust,
+        'q2_ux': payload.q2_ux,
+        'q3_accuracy': payload.q3_accuracy,
+        'q4_empathy': payload.q4_empathy,
+        'q5_specialist': payload.q5_specialist,
+        'q6_latency': payload.q6_latency,
+        'q7_safety': payload.q7_safety,
+        'feedback': payload.feedback,
+        'created_at': datetime.now(timezone.utc)
+    })
+    
+    # Wandb Logging
+    if 'wandb' in sys.modules and getattr(wandb, 'run', None) is not None:
+        wandb.log({
+            "eval_trust": payload.q1_trust,
+            "eval_safety": payload.q7_safety,
+            "eval_latency_tolerance": payload.q6_latency
+        })
+        
+    return {"status": "success", "message": "Phase 4 Evaluation saved securely."}
+
+@app.get("/admin/evaluations/csv")
+async def export_evaluations_csv(user: dict = Depends(verify_token)):
+    db = firestore_client_or_503()
+    _, profile = get_user_profile(db, user.get('email'))
+    require_roles(profile, {'admin'}, 'Only admin can export evaluations.')
+    
+    docs = db.collection('evaluations').order_by('created_at').stream()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Participant_ID", "Expertise_Level", "Q1_Multimodal_Trust", "Q2_UX_Intuitive", "Q3_Accuracy_Perception", "Q4_Nurse_Empathy", "Q5_Specialist_Conformity", "Q6_Latency_Tolerance", "Q7_FactChecker_Safety", "Qualitative_Feedback"])
+    
+    for idx, doc in enumerate(docs):
+        d = doc.to_dict()
+        writer.writerow([
+            f"P{idx+1:02d}",
+            d.get("expertise", "Unknown"),
+            d.get("q1_trust", 0), d.get("q2_ux", 0), d.get("q3_accuracy", 0),
+            d.get("q4_empathy", 0), d.get("q5_specialist", 0), d.get("q6_latency", 0), d.get("q7_safety", 0),
+            d.get("feedback", "").replace('\n', ' ')
+        ])
+        
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=Phase4_Evaluation_Data.csv"}
+    )
+
 
 
 @app.get("/{full_path:path}")

@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { LogIn, LogOut, Sun, Moon, Menu, X } from "lucide-react";
+import { LogIn, LogOut, Sun, Moon, Menu, X, BarChart2 } from "lucide-react";
 import { loginWithGoogle, logout } from "../lib/firebase";
 import { motion, AnimatePresence } from "framer-motion";
+import EvaluationModal from "./EvaluationModal";
 
 interface NavbarProps {
   user: any;
@@ -37,6 +38,7 @@ export default function Navbar({
   }
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [evalModalOpen, setEvalModalOpen] = useState(false);
 
   return (
     <nav className="sticky top-4 z-50 flex items-center justify-between mx-auto w-[calc(100%-2rem)] max-w-6xl px-6 py-4 apple-glass-panel rounded-2xl transition-all duration-500">
@@ -75,6 +77,17 @@ export default function Navbar({
           >
             {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
           </button>
+          
+          {user && (
+            <button
+              onClick={() => setEvalModalOpen(true)}
+              className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-wider"
+              title="Phase 4 Evaluation"
+            >
+              <BarChart2 size={16} />
+              Evaluate
+            </button>
+          )}
 
           {user ? (
             <div className="hidden lg:flex items-center gap-4">
@@ -193,6 +206,13 @@ export default function Navbar({
           </motion.div>
         )}
       </AnimatePresence>
+      
+      {/* Evaluation Interface Component */}
+      <EvaluationModal 
+        isOpen={evalModalOpen} 
+        onClose={() => setEvalModalOpen(false)} 
+        user={user} 
+      />
     </nav>
   );
 }
