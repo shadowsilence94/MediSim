@@ -1552,57 +1552,62 @@ async def triage(
         stream_gen = system.run_stage(normalized_stage, message, rag_context, thread_memory, stream=True)
 
         async def combined_stream():
-            full_response = ""
-            for chunk in stream_gen:
-                full_response += chunk
-                payload = {'chunk': chunk, 'case_id': case_id, 'stage': normalized_stage}
-                yield f"data: {json.dumps(payload)}\n\n"
-            
-            # Save the agent's response to the thread after completion
-            if full_response.strip():
-                db.collection('care_case_messages').add({
-                    'case_id': case_id,
-                    'patient_email': user_email,
-                    'sender_email': 'ai_agent',
-                    'sender_role': 'assistant',
-                    'agent_role': normalized_stage,
-                    'message': full_response.strip(),
-                    'created_at': datetime.now(timezone.utc),
-                })
+            try:
+                full_response = ""
+                for chunk in stream_gen:
+                    full_response += chunk
+                    payload = {'chunk': chunk, 'case_id': case_id, 'stage': normalized_stage}
+                    yield f"data: {json.dumps(payload)}\n\n"
                 
-                # Update main case document with snapshot responses for easy display
-                update_data = {}
-                if normalized_stage == 'intake':
-                    update_data['nurse_response'] = full_response
-                elif normalized_stage == 'specialist':
-                    update_data['specialist_response'] = full_response
-                elif normalized_stage == 'final_nurse':
-                    update_data['final_nurse_response'] = full_response
-                elif normalized_stage == 'fact_checker':
-                    update_data['verified_response'] = full_response
-                elif normalized_stage == 'single_agent':
-                    update_data['nurse_response'] = "Single Agent Response: " + full_response
-                    update_data['specialist_response'] = "Standalone Mode (Evaluated)"
-                    update_data['final_nurse_response'] = "Standalone Mode (Evaluated)"
-                    update_data['verified_response'] = "Standalone Mode (Evaluated)"
-                
-                if update_data:
-                    # Retrieve the existing data to merge 'responses' specifically
-                    doc_dict = case_ref.get().to_dict() or {}
-                    current_responses = doc_dict.get('responses', {})
+                # Save the agent's response to the thread after completion
+                if full_response.strip():
+                    db.collection('care_case_messages').add({
+                        'case_id': case_id,
+                        'patient_email': user_email,
+                        'sender_email': 'ai_agent',
+                        'sender_role': 'assistant',
+                        'agent_role': normalized_stage,
+                        'message': full_response.strip(),
+                        'created_at': datetime.now(timezone.utc),
+                    })
+                    
+                    # Update main case document with snapshot responses for easy display
+                    update_data = {}
                     if normalized_stage == 'intake':
-                        current_responses['nurse'] = full_response
+                        update_data['nurse_response'] = full_response
                     elif normalized_stage == 'specialist':
-                        current_responses['specialist'] = full_response
+                        update_data['specialist_response'] = full_response
                     elif normalized_stage == 'final_nurse':
-                        current_responses['final_nurse'] = full_response
+                        update_data['final_nurse_response'] = full_response
                     elif normalized_stage == 'fact_checker':
-                        current_responses['verified'] = full_response
-                        
-                    update_data['responses'] = current_responses
-                    case_ref.update(update_data)
+                        update_data['verified_response'] = full_response
+                    elif normalized_stage == 'single_agent':
+                        update_data['nurse_response'] = "Single Agent Response: " + full_response
+                        update_data['specialist_response'] = "Standalone Mode (Evaluated)"
+                        update_data['final_nurse_response'] = "Standalone Mode (Evaluated)"
+                        update_data['verified_response'] = "Standalone Mode (Evaluated)"
+                    
+                    if update_data:
+                        # Retrieve the existing data to merge 'responses' specifically
+                        doc_dict = case_ref.get().to_dict() or {}
+                        current_responses = doc_dict.get('responses', {})
+                        if normalized_stage == 'intake':
+                            current_responses['nurse'] = full_response
+                        elif normalized_stage == 'specialist':
+                            current_responses['specialist'] = full_response
+                        elif normalized_stage == 'final_nurse':
+                            current_responses['final_nurse'] = full_response
+                        elif normalized_stage == 'fact_checker':
+                            current_responses['verified'] = full_response
+                            
+                        update_data['responses'] = current_responses
+                        case_ref.update(update_data)
 
-            yield "event: done\ndata: {}\n\n"
+                yield "event: done\ndata: {}\n\n"
+            except Exception as stream_err:
+                print(f"LLM Stream Error: {stream_err}")
+                yield f"data: {json.dumps({'error': f'Agent Error: {str(stream_err)}'})}\n\n"
+                yield "event: done\ndata: {}\n\n"
 
         return StreamingResponse(combined_stream(), media_type="text/event-stream")
 
