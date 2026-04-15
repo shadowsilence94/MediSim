@@ -27,4 +27,4 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          git push https://user:${HF_TOKEN}@huggingface.co/spaces/shadowsilence/medisim main --force
+          git push https://shadowsilence:${HF_TOKEN}@huggingface.co/spaces/shadowsilence/medisim main --force
