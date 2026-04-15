@@ -163,6 +163,18 @@ export default function Navbar({
               ))}
             </div>
             
+            {user && (
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setEvalModalOpen(true);
+                }}
+                className="flex items-center justify-center gap-2 p-4 mt-1 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-xl font-black uppercase tracking-wider text-[11px] transition-all focus:ring-4 focus:ring-orange-500/20 active:scale-95"
+              >
+                <BarChart2 size={16} /> Evaluate App
+              </button>
+            )}
+            
             {!user ? (
               <button
                 onClick={() => {
