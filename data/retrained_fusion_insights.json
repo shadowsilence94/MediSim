@@ -1,3 +1,79 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:fa15875c44738711368a956ad456f36cab922a376b9c65d7c3523ffdbb689b6b
-size 1890
+{
+  "retrained_multimodal_fusion": {
+    "summary": {
+      "accuracy": 0.24759615384615385,
+      "precision_weighted": 0.5003335567688784,
+      "recall_weighted": 0.24759615384615385,
+      "f1_weighted": 0.22592356493467744,
+      "precision_macro": 0.2822179133224137,
+      "recall_macro": 0.3426856952881074,
+      "f1_macro": 0.2601883076002713,
+      "samples": 416
+    },
+    "selection_metric": "val_f1_macro",
+    "best_epoch": 13,
+    "best_val_f1_macro": 0.23413003938553878,
+    "epoch_loss": [
+      1.989019623886008,
+      1.3403030423665552,
+      1.014495193804583,
+      0.8517002678827381,
+      0.7341900830910709,
+      0.6559154498878369,
+      0.5434116549932078,
+      0.5882491543466373,
+      0.49670511262818917,
+      0.4733179096034533,
+      0.43981370168472456,
+      0.41630039130860597,
+      0.37967333678672954,
+      0.3730379076825398
+    ],
+    "epoch_accuracy": [
+      0.185146982980918,
+      0.334708612686952,
+      0.46776689014956163,
+      0.5368746776689015,
+      0.6070139247034554,
+      0.6410520887055183,
+      0.6941722537390408,
+      0.6905621454357916,
+      0.7374935533780299,
+      0.7684373388344508,
+      0.7998968540484785,
+      0.8308406395048994,
+      0.8483754512635379,
+      0.8607529654461062
+    ],
+    "class_names": [
+      "atherosclerosis",
+      "calcinosis",
+      "cardiomegaly",
+      "degenerative",
+      "effusion",
+      "emphysema",
+      "fracture",
+      "granulomatous",
+      "hyperdistention",
+      "hypoinflation",
+      "nodule",
+      "normal",
+      "opacity",
+      "pneumonia",
+      "tortuous"
+    ],
+    "config": {
+      "epochs": 14,
+      "batch_size": 16,
+      "lr": 0.0003,
+      "weight_decay": 0.0001,
+      "label_smoothing": 0.05,
+      "patience": 4,
+      "min_lr": 1e-06,
+      "max_len": 60,
+      "min_freq": 2,
+      "seed": 42,
+      "weighted_sampler": true
+    }
+  }
+}
