@@ -1004,10 +1004,26 @@ async def delete_feedback(feedback_id: str, user: dict = Depends(verify_token)):
     _, profile = get_user_profile(db, user_email)
     require_roles(profile, {'admin'}, 'Only admin can delete feedback.')
     doc_ref = db.collection('feedback_records').document(feedback_id)
-    if not doc_ref.get().exists:
+    feedback_doc = doc_ref.get()
+    if not feedback_doc.exists:
         raise HTTPException(status_code=404, detail='Feedback not found')
+        
+    feedback_data = feedback_doc.to_dict()
+    
+    # Cascade deletion to structurally linked Phase 4 CSV dataset logs
+    if feedback_data.get('source_type') == 'phase4_evaluation':
+        eval_ref = db.collection('evaluations').document(feedback_id)
+        if eval_ref.get().exists:
+            eval_ref.delete()
+        else:
+            ts = feedback_data.get('created_at')
+            if ts:
+                stray_evals = db.collection('evaluations').where('user_email', '==', feedback_data.get('user_email')).where('created_at', '==', ts).stream()
+                for doc in stray_evals:
+                    doc.reference.delete()
+                    
     doc_ref.delete()
-    return {'status': 'success', 'message': 'Feedback deleted'}
+    return {'status': 'success', 'message': 'Feedback successfully deleted.'}
 
 @app.get('/care/cases')
 async def list_care_cases(limit: int = 100, user: dict = Depends(verify_token)):
@@ -1710,8 +1726,13 @@ async def submit_evaluation(payload: EvaluationPayload, user: dict = Depends(ver
     db = firestore_client_or_503()
     user_email = user.get('email')
     
+    creation_time = datetime.now(timezone.utc)
+    
+    # Bind a shared unique Document ID for structural synchronization and cascade deletion capability 
+    sync_id = db.collection('evaluations').document().id
+    
     # 1. Save precise Phase 4 HCI Evaluation data
-    db.collection('evaluations').add({
+    db.collection('evaluations').document(sync_id).set({
         'user_email': user_email,
         'expertise': payload.expertise,
         'q1_trust': payload.q1_trust,
@@ -1722,21 +1743,21 @@ async def submit_evaluation(payload: EvaluationPayload, user: dict = Depends(ver
         'q6_latency': payload.q6_latency,
         'q7_safety': payload.q7_safety,
         'feedback': payload.feedback,
-        'created_at': datetime.now(timezone.utc)
+        'created_at': creation_time
     })
     
     # 2. Seamlessly merge into the Global System Telemetry & Feedback flow in Care Ops
     avg_rating = round((payload.q1_trust + payload.q2_ux + payload.q3_accuracy + payload.q4_empathy + payload.q5_specialist + payload.q6_latency + payload.q7_safety) / 7.0)
     summary_comment = f"[Phase 4 Evaluation] Expertise: {payload.expertise} | Trust:{payload.q1_trust} UX:{payload.q2_ux} Acc:{payload.q3_accuracy} Emp:{payload.q4_empathy} Spec:{payload.q5_specialist} Lat:{payload.q6_latency} Safe:{payload.q7_safety} | Qualitative: {payload.feedback}"
     
-    db.collection('feedback_records').add({
+    db.collection('feedback_records').document(sync_id).set({
         'user_email': user_email,
         'source_type': 'phase4_evaluation',
         'source_id': 'empirical_run',
         'rating': avg_rating,
         'condition': 'System-wide HCI',
         'comment': summary_comment,
-        'created_at': datetime.now(timezone.utc),
+        'created_at': creation_time,
     })
     
     # Wandb Logging
