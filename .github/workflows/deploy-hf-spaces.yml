@@ -30,4 +30,4 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          hf upload shadowsilence/medisim . . --repo-type space --exclude "reports/*" --exclude "MyWorks/*" --exclude ".github/*" --exclude ".git/*"
+          huggingface-cli upload shadowsilence/medisim . . --repo-type space --exclude "reports/*" --exclude "MyWorks/*" --exclude ".github/*" --exclude ".git/*"
