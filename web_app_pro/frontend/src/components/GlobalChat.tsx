@@ -190,7 +190,7 @@ export default function GlobalChat({ userRole }: { userRole: Role | null }) {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 p-4 bg-sage-900 dark:bg-sage-600 text-white rounded-full shadow-2xl hover:scale-110 transition-transform flex items-center justify-center z-[9990] group hover:shadow-sage-500/50"
+          className="tour-chat-btn fixed bottom-6 right-6 p-4 bg-sage-900 dark:bg-sage-600 text-white rounded-full shadow-2xl hover:scale-110 transition-transform flex items-center justify-center z-[9990] group hover:shadow-sage-500/50"
         >
           <MessageCircle
             size={24}

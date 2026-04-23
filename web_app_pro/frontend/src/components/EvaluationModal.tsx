@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X, CheckCircle, FileSpreadsheet } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 
 interface EvaluationModalProps {
   isOpen: boolean;
@@ -77,9 +78,9 @@ export default function EvaluationModal({ isOpen, onClose, user }: EvaluationMod
 
   if (!isOpen) return null;
 
-  return (
+  const modalContent = (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -163,6 +164,8 @@ export default function EvaluationModal({ isOpen, onClose, user }: EvaluationMod
       </div>
     </AnimatePresence>
   );
+
+  return createPortal(modalContent, document.body);
 }
 
 function MetricSlider({ label, val, setVal }: { label: string, val: number, setVal: (v: number) => void }) {

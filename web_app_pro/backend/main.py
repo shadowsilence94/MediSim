@@ -70,8 +70,8 @@ async def bootstrap_model_on_startup():
         try:
             if os.getenv("WANDB_API_KEY"):
                 import wandb
-                wandb.init(project="medisim-triage-tracker", entity=os.getenv("WANDB_ENTITY", None))
-                print("WandB System Logging Tracker Initialized")
+                wandb.init(project="medisim-phase4-evaluation", entity=os.getenv("WANDB_ENTITY", None))
+                print("WandB Phase 4 HCI Evaluation Tracker Initialized")
         except Exception as we:
             print(f"WARNING: WandB integration failed: {we}")
             
@@ -1760,12 +1760,19 @@ async def submit_evaluation(payload: EvaluationPayload, user: dict = Depends(ver
         'created_at': creation_time,
     })
     
-    # Wandb Logging
+    # Wandb Logging - Real-time synchronization of participant interaction vectors
     if 'wandb' in sys.modules and getattr(wandb, 'run', None) is not None:
         wandb.log({
+            "participant_id_hash": sync_id[:8],
+            "demographic_expertise": payload.expertise,
             "eval_trust": payload.q1_trust,
-            "eval_safety": payload.q7_safety,
-            "eval_latency_tolerance": payload.q6_latency
+            "eval_ux_intuitiveness": payload.q2_ux,
+            "eval_accuracy_perception": payload.q3_accuracy,
+            "eval_nurse_empathy": payload.q4_empathy,
+            "eval_specialist_conformity": payload.q5_specialist,
+            "eval_latency_tolerance": payload.q6_latency,
+            "eval_factchecker_safety": payload.q7_safety,
+            "global_safety_impact": (payload.q1_trust + payload.q7_safety) / 2.0
         })
         
     return {"status": "success", "message": "Phase 4 Evaluation saved securely."}

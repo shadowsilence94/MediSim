@@ -58,7 +58,7 @@ export default function Navbar({
 
       <div className="flex items-center gap-4">
         {user && (
-          <div className="hidden lg:flex gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-xl">
+          <div className="tour-nav-menu hidden lg:flex gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-xl">
             {menuItems.map((item) => (
               <NavItem
                 key={item.key}
@@ -81,7 +81,7 @@ export default function Navbar({
           {user && (
             <button
               onClick={() => setEvalModalOpen(true)}
-              className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-wider"
+              className="tour-eval-btn hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-wider"
               title="Phase 4 Evaluation"
             >
               <BarChart2 size={16} />

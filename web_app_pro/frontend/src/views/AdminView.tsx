@@ -14,6 +14,7 @@ import {
   Search,
 } from "lucide-react";
 import { apiDelete, apiGet, apiPatchForm } from "../lib/api";
+import { auth } from "../lib/firebase";
 import { motion, AnimatePresence } from "framer-motion";
 
 type Role = "admin" | "physician" | "patient";
@@ -297,6 +298,31 @@ export default function AdminView() {
       ]);
     }
     downloadCsv("care_ops_telemetry_feedback.csv", rows);
+  };
+  
+  const exportHciEvaluationCsv = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error("Not logged in");
+      const userToken = await user.getIdToken(true);
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/admin/evaluations/csv`, {
+        headers: {
+          'Authorization': `Bearer ${userToken}`
+        }
+      });
+      if (!res.ok) throw new Error("Unauthorized or Failed");
+      
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "Phase4_Evaluation_Data.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err) {
+      alert("Failed to download CSV. Make sure you are an Admin.");
+    }
   };
 
   const loadBase = async () => {
@@ -626,12 +652,21 @@ export default function AdminView() {
             <div className="flex items-center gap-2">
               <ShieldCheck size={16} /> System Telemetry & Feedback
             </div>
-            <button
-              onClick={exportTelemetryCsv}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sage-700 text-white text-[10px] font-black uppercase tracking-wider hover:bg-sage-600 transition-colors"
-            >
-              <Download size={12} /> Export CSV
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={exportHciEvaluationCsv}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-600 text-white text-[10px] font-black uppercase tracking-wider hover:bg-orange-500 transition-colors shadow-md shadow-orange-500/20"
+                title="Download the Phase 4 Experimental Run Output"
+              >
+                <Download size={12} /> Phase 4 HCI CSV
+              </button>
+              <button
+                onClick={exportTelemetryCsv}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sage-700 text-white text-[10px] font-black uppercase tracking-wider hover:bg-sage-600 transition-colors"
+              >
+                <Download size={12} /> Export CSV
+              </button>
+            </div>
           </div>
           <div className="grid md:grid-cols-2 gap-3 relative z-10">
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/60 dark:bg-black/30 border border-black/10 dark:border-white/10">

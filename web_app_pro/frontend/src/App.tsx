@@ -9,6 +9,7 @@ import Navbar from "./components/Navbar";
 import LandingPage from "./components/LandingPage";
 import Dashboard from "./components/Dashboard";
 import Footer from "./components/Footer";
+import OnboardingTour from "./components/OnboardingTour";
 
 // --- Views ---
 import DiagnosticView from "./views/DiagnosticView";
@@ -107,6 +108,7 @@ export default function App() {
       </main>
 
       <Footer />
+      {user && <OnboardingTour />}
       {user && <GlobalChat userRole={userRole as "patient" | "physician" | "admin"} />}
     </div>
   );

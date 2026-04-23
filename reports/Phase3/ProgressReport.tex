@@ -19,9 +19,8 @@
 A Comprehensive Progress Report (Phase 3)}
 
 \author{
-  \mdseries Htut Ko Ko(st126010), Imtiaz Ahmad(st126685), \\
-  \mdseries Michael R. Lacar(st126161) and Aashutosh Raut(st126438) \\
-  \mdseries Asian Institute of Technology
+  \textbf{Htut Ko Ko, Imtiaz Ahmad, Michael R. Lacar and Aashutosh Raut} \\
+  Asian Institute of Technology
 }
 
 \begin{document}
@@ -102,6 +101,9 @@ The high-level processing topology relies heavily on distinct structural layers 
 \node[box, draw=blue!70, thick, fill=blue!5, below=0.8cm of class_head] (diag_report) {Visual Diagnostic Report\\ \textit{Class Predictions + Confidence}};
 \node[box, draw=green!70!black, thick, fill=green!5, below=0.8cm of fact_checker] (clinical_steps) {Safe Conversational Output\\ \textit{Vetted Clinical Advice}};
 
+% Cloud Telemetry (Phase 4 Updates)
+\node[box, draw=red!60, dashed, thick, below=1.2cm of diag_report, xshift=2.0cm, fill=red!5] (telemetry) {\textbf{Phase 4 Telemetry Hub}\\ \textit{(WandB \& CareOps Monitoring)}};
+
 % 7. Central "OR" / Aggregation
 \path (diag_report) -- (clinical_steps) node[midway, font=\footnotesize, color=gray!90] {Front-End React Render};
 
@@ -125,14 +127,38 @@ The high-level processing topology relies heavily on distinct structural layers 
 \draw[arrow] (doctor) -- (fact_checker);
 \draw[arrow] (fact_checker) -- (clinical_steps);
 
+% Telemetry Connections
+\draw[arrow, dashed, draw=red!60] (diag_report) |- (telemetry);
+\draw[arrow, dashed, draw=red!60] (clinical_steps) |- (telemetry);
+\draw[arrow, <->, draw=orange!80] (fact_checker) -- ++(2.5,0) |- node[pos=0.25, right] {Cloud EMR Sync} (telemetry);
+
 \end{tikzpicture}
 }
 \caption{The Deep Architecture of the MediSim processing engine outlining exactly how multi-dimensional requests are logically branched and resolved.}
 \label{fig:model_flow_detailed}
 \end{figure}
 
-\subsection{Technological Stack}
-MediSim is built utilizing a fundamentally modern and robust open-source technical stack:
+\subsection{Technological Stack Evolution}
+MediSim is built utilizing a fundamentally modern and robust open-source technical stack, which has evolved significantly since the initial Phase 2 proposal:
+
+\begin{table}[htbp]
+\centering
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Phase 2 Proposal} & \textbf{Phase 3 Implementation} \\
+\midrule
+\textbf{Frontend} & React + Firebase & React.js + Vite SPA \\
+\textbf{Backend} & Not specified & FastAPI (Python 3.11, uvicorn) \\
+\textbf{Deployment} & Local consumer hardware & Hugging Face + GitHub Actions \\
+\textbf{Database} & Not specified & Google Firebase / Firestore (EMR) \\
+\bottomrule
+\end{tabular}
+}
+\caption{Evolution of the MediSim technology stack from initial proposal to functional deployment.}
+\label{tab:tech_stack}
+\end{table}
+
 \begin{itemize}
     \item \textbf{Front-End Interface:} A fully responsive Single Page Application (SPA) built via \textbf{React.js} (Vite routing) and styled utilizing dynamic Vanilla CSS for state-of-the-art visual interaction patterns.
     \item \textbf{Analytical Backend Setup:} Administered locally via \textbf{FastAPI} (Python 3.11 \textit{uvicorn} server) to enable highly concurrent, low-latency RESTful data exchange.
@@ -150,11 +176,90 @@ Initially, our \texttt{MediSimFusionModel} concatenated ResNet-18 extracted visu
 
 The operation functions strictly as follows:
 \begin{enumerate}
+    \item \textbf{Vision Standardization:} Images were normalized to ImageNet-equivalent means ($\mu=[0.485, 0.456, 0.406]$) and standard deviations to ensure compatibility with pretrained ResNet-18 weights.
     \item \textbf{Vision Encoder:} An ingested patient X-ray is scaled precisely to $224 \times 224$ pixels. It is channeled through a PyTorch \texttt{models.resnet18(weights=None)} feature backbone. The final dense layer truncates the global generic feature vector from a standard 512 dimensions down to an intentionally condensed $D_V = 128$ feature space.
     \item \textbf{Text Encoder:} Unstructured textual inputs pass securely into the \texttt{Bio\_ClinicalBERT} transformer. The \texttt{pooler\_output} directly produces a complex 768-dimensional mathematical array encapsulating the holistic semantic properties of the sentence. An independent \texttt{nn.Linear} transformation immediately reduces this array into a mirrored $D_T = 128$ bottleneck metric. 
 \end{enumerate}
 
+\subsection{Computational Processing Flow: Text Encoding}
+To clarify the latent representation generation within MediSim, Figure \ref{fig:transformer_flow_p3} details the exact parallelized sequence across the Bio\_ClinicalBERT encoder.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    node distance=0.6cm,
+    stepbox/.style={rectangle, draw, rounded corners, align=center, minimum width=3.2cm, minimum height=0.6cm, fill=white, font=\scriptsize},
+    tokenbox/.style={rectangle, draw, fill=blue!5, align=center, minimum width=1.0cm, minimum height=0.5cm, font=\tiny\ttfamily},
+    arrow/.style={-{Latex[length=1.5mm]}, thick, draw=gray!70}
+]
+
+% 1. Input Tokens
+\node[tokenbox] (t1) {chest};
+\node[tokenbox, right=0.1cm of t1] (t2) {pain};
+\node[tokenbox, right=0.1cm of t2] (t3) {and};
+\node[tokenbox, right=0.1cm of t3] (t4) {dyspnea};
+\node[above=0.2cm of t2, xshift=0.5cm, font=\scriptsize\bfseries] (input_label) {Input Tokens (all at once)};
+
+% 2. Self Attention
+\node[stepbox, below=0.7cm of t2, xshift=0.5cm, fill=purple!5] (attention) {Self-Attention\\ \textit{(All pairs simultaneously)}};
+
+% 3. Transformer Layers
+\node[stepbox, below=0.6cm of attention, fill=purple!5] (layers) {Transformer Layers\\ (1 through 12)};
+
+% 4. Pooler Output
+\node[stepbox, below=0.6cm of layers, thick, draw=blue!60] (pooler) {\textbf{pooler\_output}\\ (768-dim vector)};
+
+% 5. Linear Projection
+\node[stepbox, below=0.6cm of pooler, thick, draw=green!60!black] (projection) {Linear Projection\\ $\rightarrow$ \textbf{128-dim Latent Space}};
+
+% Connections
+\draw[arrow] (t4.south) -- (attention.north);
+\draw[arrow] (t1.south) -- (attention.north);
+\draw[arrow] (t2.south) -- (attention.north);
+\draw[arrow] (t3.south) -- (attention.north);
+\draw[arrow] (attention) -- node[right, font=\tiny] {$\downarrow$} (layers);
+\draw[arrow] (layers) -- node[right, font=\tiny] {$\downarrow$} (pooler);
+\draw[arrow] (pooler) -- node[right, font=\tiny] {$\downarrow$} (projection);
+
+\end{tikzpicture}
+\caption{Detailed Computational Processing Flow of the MediSim Text Encoder (Phase 3 Synchronization).}
+\label{fig:transformer_flow_p3}
+\end{figure}
+
+
+
 Both constrained tensor properties ($D_V$ and $D_T$) are then strictly concatenated via a simple element-wise merge, creating a $256$-dimension multimodal vector. A downstream Multi-Layer Perceptron (MLP) mapping acts as the classifier, collapsing the 256-dimension tensor securely down through Rectified Linear Units (ReLU) into our targeted output plane of 15 diagnostic pathology classes.
+
+\subsection{Architecture Upgrade: Bio\_ClinicalBERT vs. BiLSTM}
+To achieve the 5.04\% accuracy leap in MediSim Phase 3, we fundamentally transitioned from a sequential BiLSTM to a parallel Bio\_ClinicalBERT architecture. 
+
+\paragraph{Key Advantages:}
+\begin{itemize}[noitemsep]
+    \item \textbf{Parallel Processing:} Processes all tokens simultaneously rather than sequentially.
+    \item \textbf{No Forgetting:} Full context is always visible through self-attention mechanics.
+    \item \textbf{Clinical Pretraining:} Inherently trained on 880M words of intensive clinical text.
+    \item \textbf{Robust Vocabulary:} Handles colloquial and rare medical terms effectively without defaulting to \texttt{UNK} tokens.
+\end{itemize}
+
+\begin{table}[htbp]
+\centering
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lll}
+\toprule
+\textbf{Dimension} & \textbf{BiLSTM (Legacy)} & \textbf{Bio\_ClinicalBERT (Upgraded)} \\
+\midrule
+\textbf{Processing} & Sequential (left$\rightarrow$right, right$\leftarrow$left) & Parallel (all tokens at once) \\
+\textbf{Medical Knowledge} & None (learns from scratch) & 880M clinical words pretrained \\
+\textbf{Output Dimension} & 256-dim hidden state & 768-dim $\rightarrow$ Linear $\rightarrow$ 128-dim \\
+\textbf{Vocabulary} & Static, frozen embeddings & Dynamic contextual embeddings \\
+\textbf{Rare/Colloquial Terms} & \texttt{UNK} token (meaning lost) & Subword tokenization (preserved) \\
+\textbf{MediSim Accuracy} & 46.04\% / F1: 43.52\% & 51.08\% / F1: 46.82\% (+5.04 pp) \\
+\bottomrule
+\end{tabular}
+}
+\caption{Direct architectural and performance comparison demonstrating the superiority of the Bio\_ClinicalBERT upgrade.}
+\label{tab:bilstm_vs_bert}
+\end{table}
 
 \subsection{Upgraded Tokenization Protocol}
 A crippling pipeline defect resolved during this architectural overhaul related strictly to dynamic data ingestion. The legacy system forcefully eliminated ambiguous patient vocabulary strings. By replacing the manual truncation scripts with \texttt{AutoTokenizer.from\_pretrained}, Hugging Face securely returns dense dictionaries featuring strict padding structures and explicit \texttt{attention\_mask} matrices. Consequently, this precisely instructs the Transformer exactly which strings map to core significance rather than guessing boundaries.
@@ -192,8 +297,8 @@ Our primary objective evaluated whether combining specialized modalities securel
 \subsection{Experimental Design}
 Since we analyzed isolated categorical configurations across unified datasets, we adopted a \textbf{Within-Subjects} experimental framework. The exact algorithms were benchmarked linearly upon the exact identical dataloader batching.
 \begin{itemize}
-    \item \textbf{Independent Variables (IV):} Distinct Model Architectures (ResNet-18 Unimodal vs. ResNet-Bio\_ClinicalBERT Multimodal Framework).
-    \item \textbf{Dependent Variables (DV):} Primary analytical accuracy mapping (Top-1 Accuracy), weighted Macro-F1 Scores, and explicitly flagged hallucination incidents logged during Agentic simulation cycles.
+    \item \textbf{Independent Variables (IV):} Distinct Model Architectures (ResNet-18 Unimodal vs. ResNet-Bio\_ClinicalBERT Multimodal Framework) and \textbf{Agent Configuration and Human Oversight} (incorporating role-based accounts: patient, physician, admin, alongside physician/admin case interaction channels to correct fact-check outputs).
+    \item \textbf{Dependent Variables (DV):} Primary analytical accuracy mapping (Top-1 Accuracy), weighted Macro-F1 Scores, and \textbf{Safety, Hallucination, and Quality Signals}. This explicitly includes capturing 1-5 user feedback ratings and condition-linked comments to measure perceived clinical usefulness, along with physician/admin visibility of feedback to track error patterns and logging case-level correction messages to support reduced unsafe outputs through human oversight.
     \item \textbf{Control Variables:} Batch Size, Epoch sequences, learning rate thresholds (AdamW algorithm at $1 \times 10^{-4}$), and the baseline dataset structure remain identical across testing iterations.
 \end{itemize}
 
@@ -212,16 +317,16 @@ Because critical clinical classification tasks inherently mandate measuring cate
 \subsection{Diagnostic Accuracy Metrics}
 Empirical ablation outcomes entirely validated the initial project hypotheses mapping the supremacy of Fusion logic schemas.
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \resizebox{\columnwidth}{!}{%
-\begin{tabular}{lcccc}
+\begin{tabular}{lccccc}
 \toprule
-\textbf{Architectural Execution} & \textbf{Macro Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{Macro F1-Score} \\
+\textbf{Model} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{Macro F1} & \textbf{Improvement} \\
 \midrule
-Image Only (Unimodal Baseline) & 46.04\% & 43.10\% & 46.04\% & 43.52\% \\
+\textbf{Image Only — ResNet-18} (Baseline) & 46.04\% & 43.10\% & 46.04\% & 43.52\% & — \\
 \midrule
-\textbf{MediSim: CNN + Trans Fusion} & \textbf{51.08\%} & \textbf{44.85\%} & \textbf{51.08\%} & \textbf{46.82\%} \\
+\textbf{MediSim Fusion — ResNet + Bio\_ClinicalBERT} & \textbf{51.08\%} & \textbf{44.85\%} & \textbf{51.08\%} & \textbf{46.82\%} & +5.04 pp Acc / +3.30 pp F1 \\
 \bottomrule
 \end{tabular}
 }
