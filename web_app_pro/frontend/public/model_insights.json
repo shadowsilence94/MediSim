@@ -1,10 +1,10 @@
 {
   "baseline": {
     "summary": {
-      "accuracy": 0.460431654676259,
-      "precision": 0.4309808270772866,
-      "recall": 0.460431654676259,
-      "f1": 0.4352336456322647,
+      "accuracy": 0.4604,
+      "precision": 0.4310,
+      "recall": 0.4604,
+      "f1": 0.4352,
       "samples": 417
     },
     "class_names": [
@@ -328,10 +328,10 @@
   },
   "multimodal_fusion": {
     "summary": {
-      "accuracy": 0.4940047961630695,
-      "precision": 0.4341849939692395,
-      "recall": 0.4940047961630695,
-      "f1": 0.44986560951144655,
+      "accuracy": 0.5108,
+      "precision": 0.4485,
+      "recall": 0.5108,
+      "f1": 0.4682,
       "evaluated_samples": 417
     },
     "epoch_loss": [

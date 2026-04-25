@@ -60,10 +60,10 @@ interface ModelInsights {
 const fallbackInsights: ModelInsights = {
   baseline: {
     summary: {
-      accuracy: 0.7107,
-      precision: 0.6706,
-      recall: 0.7107,
-      f1: 0.6810,
+      accuracy: 0.4604,
+      precision: 0.4310,
+      recall: 0.4604,
+      f1: 0.4352,
       samples: 280,
     },
     class_support: [37, 13, 180, 46, 4],
@@ -74,10 +74,10 @@ const fallbackInsights: ModelInsights = {
   },
   multimodal_fusion: {
     summary: {
-      accuracy: 0.7143,
-      precision: 0.6796,
-      recall: 0.7143,
-      f1: 0.6935,
+      accuracy: 0.5108,
+      precision: 0.4485,
+      recall: 0.5108,
+      f1: 0.4682,
       evaluated_samples: 280,
     },
     epoch_loss: [0.9135, 0.5951, 0.3770, 0.1824, 0.1273],
@@ -234,24 +234,24 @@ export default function Dashboard({ setCurrentPage }: DashboardProps) {
               value={`${baselineAccuracy.toFixed(2)}%`}
             />
             <DashMetric
-              icon={<Cpu size={14} />}
-              label="Fusion Acc"
-              value={`${fusionAccuracy.toFixed(2)}%`}
-            />
-            <DashMetric
               icon={<BarChart3 size={14} />}
               label="Baseline F1"
               value={`${baselineF1.toFixed(2)}%`}
             />
             <DashMetric
-              icon={<ShieldCheck size={14} />}
-              label="Fusion F1"
-              value={`${fusionF1.toFixed(2)}%`}
-            />
-            <DashMetric
               icon={<BarChart3 size={14} />}
               label="Baseline P/R"
               value={`${baselinePrecision.toFixed(1)} / ${baselineRecall.toFixed(1)}`}
+            />
+            <DashMetric
+              icon={<Cpu size={14} />}
+              label="Fusion Acc"
+              value={`${fusionAccuracy.toFixed(2)}%`}
+            />
+            <DashMetric
+              icon={<ShieldCheck size={14} />}
+              label="Fusion F1"
+              value={`${fusionF1.toFixed(2)}%`}
             />
             <DashMetric
               icon={<BarChart3 size={14} />}

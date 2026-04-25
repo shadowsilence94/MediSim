@@ -8,9 +8,11 @@ app_port: 7860
 pinned: false
 ---
 
-# MediSim: Multimodal Diagnostic and Agentic Triage System
+# MediSim: Multimodal Diagnostic and Safe Agentic Triage System
 
-MediSim is an AI-powered medical assistant web application designed to safely process health inputs. It serves as our core NLP research project, targeting the reduction of clinical hallucination in generative healthcare applications using hybrid learning pipelines and multi-agent orchestration.
+**Live Deployment**: [Hugging Face Space](https://huggingface.co/spaces/htutkoko/MediSim)
+
+MediSim is an AI-powered medical assistant web application designed to safely process health inputs. It serves as our final Phase 4 NLP research project, targeting the reduction of clinical hallucination in generative healthcare applications using hybrid multimodal learning pipelines, multi-agent orchestration, and real-time RAG (Retrieval-Augmented Generation) verification.
 
 ## Core Features
 
@@ -18,45 +20,46 @@ MediSim offers two distinct standalone features addressing different triage and 
 
 ### 1. Multimodal Diagnostic Assistant
 
-- **Purpose**: Provides preliminary diagnostic assessments by combining image data and clinical context.
-- **Input**: Medical scans (e.g., Chest X-ray) + Symptom descriptions.
+- **Purpose**: Provides preliminary diagnostic assessments by combining visual radiological data and textual clinical context.
+- **Input**: Medical scans (Chest X-ray) + Symptom descriptions.
 - **Architecture**: A vision-language fusion approach.
-  - **Vision**: ResNet-18 Image Encoder.
-  - **Text**: biLSTM Text Encoder.
-  - **Fusion**: Late-fusion layer with softmax classification.
-- **Advantage**: Higher reliability and lower compute requirements than standard large multimodal models in specialized domains.
+  - **Vision Backbone**: ResNet-18 Image Encoder.
+  - **Text Backbone**: Bio\_ClinicalBERT text embeddings.
+  - **Fusion**: Late-fusion bottleneck layer mapping to a 128-dimensional latent space with softmax classification.
+- **Advantage**: Achieves **51.08% accuracy** and structurally limits hallucinations by requiring both visual and textual signals to fire simultaneously for rare pathologies.
 
-### 2. Agentic Triage & Consultation
+### 2. Multi-Agent Triage & RAG Consultation
 
-- **Purpose**: Interactively gathers patient symptoms and provides verified clinical guidance.
+- **Purpose**: Interactively gathers patient symptoms and provides verified clinical guidance safely.
 - **Processing**: A three-agent coordination loop:
-  - **Triage Nurse**: Empathetic intake and symptom gathering.
-  - **Specialist Doctor**: Constructing differential hypotheses and clinical steps.
-  - **Fact-Checker**: Cross-verifying responses against clinical safety guidelines to prevent hallucinations.
-- **Advantage**: Drastically mitigates clinical AI hallucination through collaborative verification.
+  - **Triage Nurse (Agent 1)**: Empathetic intake and symptom gathering.
+  - **Specialist Doctor (Agent 2)**: Constructing differential hypotheses and clinical steps.
+  - **Fact-Checker (Agent 3)**: Cross-verifies responses against the patient's Electronic Medical Record (EMR) stored in Firestore using RAG. If contraindications (e.g., allergies) are detected, it triggers a hard fallback warning.
+- **HCI Evaluation**: A Phase 4 Human-in-the-Loop study ($N=26$) confirmed that the multi-agent system with visible Fact-Checker telemetry significantly increased clinical trust compared to standard LLM endpoints.
 
-## Project Architecture
+## Project Architecture & Technologies
 
-The project has transitioned to a professional distributed architecture:
+The project utilizes a highly decoupled, distributed architecture:
 
 - **Frontend**: React (TypeScript) + Vite with a Premium Glassmorphism UI.
-- **Backend**: FastAPI (Python) serving our diagnostic models and agent orchestration.
-- **Database/Auth**: Firebase (Auth & Firestore) for secure Google sign-in and persistent user history.
+- **Backend**: FastAPI (Python) serving our PyTorch models and LangChain orchestrators.
+- **Database/Auth**: Firebase (Auth & Firestore) for secure Google sign-in and patient EMR data persistence.
+- **CI/CD pipeline**: Automated GitHub Actions directly deploying to Hugging Face Spaces.
+- **Telemetry**: Weights & Biases (WandB) for immutable logging of evaluation metrics and interaction arrays.
 
 ### Directory Structure
 
 ```
 MediSim/
 ├── web_app_pro/           # Professional Web Application Suite
-│   ├── frontend/          # React + Vite + Tailwind (Glassmorphism UI)
+│   ├── frontend/          # React + Vite + Tailwind 
 │   └── backend/           # FastAPI + PyTorch + LangChain
-├── data/                  # Trained model weights and vocabulary
-├── notebooks/             # Training pipelines (ResNet18-biLSTM)
-├── reports/               # ACL-formatted project reports
+├── reports/               # Final Project Reports & HCI Forms (Phase 4)
+├── .github/workflows/     # CI/CD deployment pipelines
 └── README.md              # Project documentation
 ```
 
-## Setup and Installation
+## Setup and Installation (Local Development)
 
 ### Backend (FastAPI)
 
@@ -88,17 +91,15 @@ MediSim/
    npm run dev
    ```
 
-## Deployment
+## Automated Deployment
 
-The project includes a Dockerfile for easy deployment to platforms like Hugging Face Spaces. It serves the React application via FastAPI static mounting.
+The project is containerized via a root `Dockerfile` and continuously integrated. Pushing to the `main` branch triggers the GitHub Action (`deploy-hf-spaces.yml`) which builds and deploys the application directly to Hugging Face Spaces.
 
 ## Team Members
-
 - Htut Ko Ko (st126010)
 - Imtiaz Ahmad (st126685)
 - Michael R. Lacar (st126161)
 - Aashutosh Raut (st126438)
 
-## References
-
-Refer to reports/Phase2/report.pdf for the full methodology and literature review.
+## Documentation
+Please refer to the `reports/Phase4/1_Final_Report_Phase4.pdf` for the full methodology, model training procedures, and comprehensive HCI evaluation results.
