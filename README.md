@@ -10,7 +10,7 @@ pinned: false
 
 # MediSim: Multimodal Diagnostic and Safe Agentic Triage System
 
-**Live Deployment**: [Hugging Face Space](https://huggingface.co/spaces/htutkoko/MediSim)
+**Live Deployment**: [Hugging Face Space](https://huggingface.co/spaces/shadowsilence/MediSim)
 
 MediSim is an AI-powered medical assistant web application designed to safely process health inputs. It serves as our final Phase 4 NLP research project, targeting the reduction of clinical hallucination in generative healthcare applications using hybrid multimodal learning pipelines, multi-agent orchestration, and real-time RAG (Retrieval-Augmented Generation) verification.
 
